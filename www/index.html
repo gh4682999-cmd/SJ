@@ -217,13 +217,15 @@ const firebaseConfig={
     $("sync").textContent="Firebase 설정 전 (이 화면에서만 임시 저장)";
     $("notice").innerHTML='<div class="notice">Firebase 설정이 아직 입력되지 않아 다른 직원과 공유되지 않습니다. README의 설정 방법을 확인해 주세요.</div>';return}
   firebase.initializeApp(firebaseConfig);
-  col=firebase.firestore().collection("vehicles");
+  const db=firebase.firestore();
+db.settings({experimentalAutoDetectLongPolling:true,merge:true});
+col=db.collection("vehicles");
   const t=setTimeout(()=>{$("sync").textContent="서버에 연결하지 못했습니다. 인터넷 연결을 확인해 주세요."},10000);
   col.onSnapshot(s=>{
     items=s.docs.map(d=>Object.assign({id:d.id},d.data()));
     if(!s.metadata.fromCache)clearTimeout(t);
     $("sync").textContent="실시간 공유 중 · 직원 모두 같은 화면을 봅니다";render();
-  },e=>{clearTimeout(t);$("sync").textContent="데이터를 불러오지 못했습니다 (규칙/설정 확인)"});
+  },e=>{clearTimeout(t);$("sync").textContent="데이터를 불러오지 못했습니다: "+(e.code||e.message)});
 })();
 </script>
 </body>
