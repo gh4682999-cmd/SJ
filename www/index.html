@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SJ모터스 차량 입출고 현황</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--tx:#1b1f24;--mu:#6b7280;--ln:#e3e6ea;--pri:#1f5fd6;--pritx:#fff;
+--wait:#b45309;--waitbg:#fef3c7;--work:#1d4ed8;--workbg:#dbeafe;--ready:#047857;--readybg:#d1fae5;--done:#4b5563;--donebg:#e5e7eb;--danger:#c0262d;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171b;--card:#1d2127;--tx:#eceff3;--mu:#9aa3af;--ln:#2e343b;--pri:#5b92f5;--pritx:#0b1220;
+--wait:#fbbf24;--waitbg:#3a2c0b;--work:#93c5fd;--workbg:#172a4d;--ready:#6ee7b7;--readybg:#0f3326;--done:#cbd5e1;--donebg:#2a3038;--danger:#f87171;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14171b;--card:#1d2127;--tx:#eceff3;--mu:#9aa3af;--ln:#2e343b;--pri:#5b92f5;--pritx:#0b1220;
+--wait:#fbbf24;--waitbg:#3a2c0b;--work:#93c5fd;--workbg:#172a4d;--ready:#6ee7b7;--readybg:#0f3326;--done:#cbd5e1;--donebg:#2a3038;--danger:#f87171;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 -apple-system,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:16px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+h1{font-size:20px;margin:0}
+.sub{color:var(--mu);font-size:13px}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--ln);background:var(--card);color:var(--tx);padding:8px 14px}
+button.pri{background:var(--pri);color:var(--pritx);border-color:var(--pri);font-weight:600}
+button.del{color:var(--danger)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.stat{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:10px;text-align:center;cursor:pointer}
+.stat b{display:block;font-size:22px}
+.stat span{font-size:12px;color:var(--mu)}
+.stat.on{outline:2px solid var(--pri)}
+.bar{display:flex;gap:8px;margin-bottom:12px}
+.bar input{flex:1}
+input,select,textarea{font:inherit;width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--ln);background:var(--card);color:var(--tx)}
+.notice{background:var(--waitbg);color:var(--wait);border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:13px}
+.list{display:grid;gap:10px}
+.item{background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:12px 14px}
+.row{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.plate{font-size:18px;font-weight:700}
+.model{color:var(--mu)}
+.badge{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.s-wait{background:var(--waitbg);color:var(--wait)}.s-work{background:var(--workbg);color:var(--work)}
+.s-ready{background:var(--readybg);color:var(--ready)}.s-done{background:var(--donebg);color:var(--done)}
+.meta{margin:6px 0;font-size:13px;color:var(--mu);display:flex;gap:4px 14px;flex-wrap:wrap}
+.work{margin:4px 0}
+.acts{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.empty{text-align:center;color:var(--mu);padding:40px 0}
+dialog{border:1px solid var(--ln);border-radius:14px;background:var(--card);color:var(--tx);width:min(480px,94vw);padding:18px}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+label{display:block;font-size:13px;color:var(--mu);margin:10px 0 4px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dacts{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+.today{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.today div{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:8px 10px}
+.today span{font-size:12px;color:var(--mu);display:block}.today b{font-size:17px}
+.bar select{width:auto;max-width:45%}
+.m-row{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--ln);font-size:14px}
+#m_list{max-height:50vh;overflow:auto}
+@media (max-width:520px){.stats,.today{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div><h1>🚗 SJ모터스 차량 입출고 현황</h1><div class="sub" id="sync">불러오는 중…</div></div>
+    <div style="display:flex;gap:8px"><button id="monBtn">📊 월별 출고 현황</button><button class="pri" id="addBtn">+ 차량 입고 등록</button></div>
+  </header>
+  <div id="notice"></div>
+  <div class="today" id="today"></div>
+  <div class="stats" id="stats"></div>
+  <div class="bar"><input id="q" placeholder="차량번호, 차종, 고객명 검색"><select id="mechSel"></select></div>
+  <div class="list" id="list"></div>
+</div>
+
+<dialog id="dlg">
+  <h2 id="dtitle" style="margin:0 0 4px;font-size:18px">차량 입고 등록</h2>
+  <div class="g2">
+    <div><label>차량번호 *</label><input id="f_plate" placeholder="12가 3456"></div>
+    <div><label>차종</label><input id="f_model" placeholder="쏘나타"></div>
+    <div><label>고객명</label><input id="f_cust"></div>
+    <div><label>연락처</label><input id="f_phone" inputmode="tel"></div>
+    <div><label>담당 정비사</label><input id="f_mech"></div>
+    <div><label>상태</label><select id="f_status"></select></div>
+    <div><label>입고 날짜</label><input id="f_in" type="date"></div>
+    <div><label>출고 예정일</label><input id="f_due" type="date"></div>
+    <div><label>견적 금액(원)</label><input id="f_est" type="number" inputmode="numeric" min="0"></div>
+    <div><label>수리 비용(원)</label><input id="f_cost" type="number" inputmode="numeric" min="0"></div>
+    <div><label>보험사</label><select id="f_ins"></select></div>
+  </div>
+  <label>정비 내용</label><textarea id="f_work" rows="2"></textarea>
+  <label>메모</label><textarea id="f_note" rows="2"></textarea>
+  <div class="dacts">
+    <button class="del" id="delBtn" style="margin-right:auto">삭제</button>
+    <button id="cancelBtn">취소</button>
+    <button class="pri" id="saveBtn">저장</button>
+  </div>
+</dialog>
+
+<dialog id="mdlg">
+  <h2 style="margin:0 0 8px;font-size:18px">월별 출고 현황</h2>
+  <input id="m_in" type="month">
+  <div class="today" id="m_sum" style="grid-template-columns:1fr 1fr;margin:12px 0"></div>
+  <div id="m_list"></div>
+  <div class="dacts"><button id="m_close">닫기</button></div>
+</dialog>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+const ST=[["wait","입고대기"],["work","작업중"],["ready","출고대기"],["done","출고완료"]];
+const NAME=Object.fromEntries(ST);
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let items=[],filter="all",editing=null,col=null,delArmed=false,mechFilter="all",delCard=null;
+const won=n=>(Number(n)||0).toLocaleString("ko-KR")+"원";
+function ymd(t){const d=t?new Date(t):new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function inTs(prev){const v=$("f_in").value;if(!v)return prev||Date.now();if(prev&&ymd(prev)===v)return prev;const [y,m,dd]=v.split("-").map(Number),n=new Date();return new Date(y,m-1,dd,n.getHours(),n.getMinutes()).getTime()}
+
+function fmt(t){if(!t)return"";const d=new Date(t);return (d.getMonth()+1)+"/"+d.getDate()+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")}
+
+function render(){
+  const q=$("q").value.trim().toLowerCase();
+  if($("mdlg").open)renderMonth();
+  const sameDay=t=>t&&new Date(t).toDateString()===new Date().toDateString();
+  const tIn=items.filter(i=>sameDay(i.inAt)).length,tOut=items.filter(i=>sameDay(i.outAt)),rev=tOut.reduce((s,i)=>s+(Number(i.cost)||Number(i.est)||0),0);
+  $("today").innerHTML=`<div><span>오늘 입고</span><b>${tIn}대</b></div><div><span>오늘 출고</span><b>${tOut.length}대</b></div><div><span>현재 작업중</span><b>${items.filter(i=>i.status==="work").length}대</b></div><div><span>오늘 출고 금액</span><b>${won(rev)}</b></div>`;
+  const mechs=[...new Set(items.map(i=>i.mech).filter(Boolean))].sort();
+  if(mechFilter!=="all"&&!mechs.includes(mechFilter))mechFilter="all";
+  $("mechSel").innerHTML='<option value="all">작업자 전체</option>'+mechs.map(m=>`<option value="${esc(m)}"${m===mechFilter?" selected":""}>${esc(m)} (진행 ${items.filter(i=>i.mech===m&&i.status!=="done").length})</option>`).join("");
+  const base=mechFilter==="all"?items:items.filter(i=>i.mech===mechFilter);
+  const cnt={all:base.length};ST.forEach(([k])=>cnt[k]=base.filter(i=>i.status===k).length);
+  $("stats").innerHTML=[["all","전체"],["wait","입고대기"],["work","작업중"],["ready","출고대기"]]
+    .map(([k,n])=>`<div class="stat ${filter===k?"on":""}" data-f="${k}"><b>${cnt[k]}</b><span>${n}</span></div>`).join("");
+  let list=base.filter(i=>(filter==="all"||i.status===filter)&&(!q||[i.plate,i.model,i.cust,i.ins].join(" ").toLowerCase().includes(q)));
+  const ord={wait:0,work:1,ready:2,done:3};
+  list.sort((a,b)=>ord[a.status]-ord[b.status]||(b.inAt||0)-(a.inAt||0));
+  if(!list.length){$("list").innerHTML='<div class="empty">표시할 차량이 없습니다.</div>';return}
+  $("list").innerHTML=list.map(i=>{
+    const idx=ST.findIndex(s=>s[0]===i.status),next=ST[idx+1];
+    return `<div class="item"><div class="row"><div><span class="plate">${esc(i.plate)}</span> <span class="model">${esc(i.model)}</span></div>
+    <span class="badge s-${i.status}">${NAME[i.status]||""}</span></div>
+    <div class="meta"><span>입고 ${ymd(i.inAt).slice(5).replace("-","/")}</span>${i.outAt?`<span>출고 ${fmt(i.outAt)}</span>`:""}${i.cust?`<span>고객 ${esc(i.cust)}</span>`:""}${i.phone?`<span>${esc(i.phone)}</span>`:""}${i.mech?`<span>정비사 ${esc(i.mech)}</span>`:""}${i.due?`<span style="${i.status!=="done"&&i.due<ymd()?"color:var(--danger);font-weight:600":""}">출고예정 ${esc(i.due.slice(5).replace("-","/"))}${i.status!=="done"&&i.due<ymd()?" (지연)":""}</span>`:""}${i.est?`<span>견적 ${won(i.est)}</span>`:""}${i.cost?`<span>수리비 ${won(i.cost)}</span>`:""}${i.ins?`<span>🛡 ${esc(i.ins)}</span>`:""}</div>
+    ${i.work?`<div class="work">🔧 ${esc(i.work)}</div>`:""}${i.note?`<div class="meta">📝 ${esc(i.note)}</div>`:""}
+    <div class="acts">${next?`<button class="pri" data-adv="${i.id}">→ ${next[1]}</button>`:""}<button data-edit="${i.id}">수정</button><button class="del" data-del="${i.id}">${delCard===i.id?"정말 삭제?":"삭제"}</button></div></div>`}).join("");
+}
+
+function persist(id,data,isNew){
+  if(col){return (isNew?col.doc(id).set(data):col.doc(id).update(data)).catch(e=>{$("notice").innerHTML='<div class="notice">저장에 실패했습니다. 권한이나 연결을 확인해 주세요.</div>'})}
+  const i=items.findIndex(x=>x.id===id);
+  if(i<0)items.push(Object.assign({id},data));else Object.assign(items[i],data);
+  render();
+}
+function uid(){return "v"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+
+$("stats").onclick=e=>{const s=e.target.closest(".stat");if(s){filter=s.dataset.f;render()}};
+$("q").oninput=render;
+$("mechSel").onchange=e=>{mechFilter=e.target.value;render()};
+$("list").onclick=e=>{
+  const a=e.target.closest("[data-adv]"),ed=e.target.closest("[data-edit]"),dl=e.target.closest("[data-del]");
+  if(dl){const id=dl.dataset.del;if(delCard===id){delCard=null;if(col)col.doc(id).delete();else{items=items.filter(x=>x.id!==id);render()}}else{delCard=id;render()}return}
+  if(delCard){delCard=null;render()}
+  if(a){const it=items.find(x=>x.id===a.dataset.adv),idx=ST.findIndex(s=>s[0]===it.status),ns=ST[idx+1][0];
+    const d={status:ns};if(ns==="done")d.outAt=Date.now();persist(it.id,d,false)}
+  if(ed)openForm(ed.dataset.edit);
+};
+ST.forEach(([k,n])=>{const o=document.createElement("option");o.value=k;o.textContent=n;$("f_status").appendChild(o)});
+["","삼성","신한","한화","KB","DB","현대"].forEach(n=>{const o=document.createElement("option");o.value=n;o.textContent=n||"선택 안 함 (일반 수리)";$("f_ins").appendChild(o)});
+
+function openForm(id){
+  editing=id?items.find(x=>x.id===id):null;delArmed=false;
+  $("dtitle").textContent=editing?"차량 정보 수정":"차량 입고 등록";
+  const v=editing||{status:"wait"};
+  $("f_plate").value=v.plate||"";$("f_model").value=v.model||"";$("f_cust").value=v.cust||"";$("f_phone").value=v.phone||"";
+  $("f_mech").value=v.mech||"";$("f_status").value=v.status;$("f_due").value=v.due||"";$("f_est").value=v.est||"";$("f_cost").value=v.cost||"";$("f_ins").value=v.ins||"";$("f_in").value=v.inAt?ymd(v.inAt):ymd();$("f_work").value=v.work||"";$("f_note").value=v.note||"";
+  $("delBtn").style.display=editing?"":"none";$("delBtn").textContent="삭제";
+  $("dlg").showModal();
+}
+$("addBtn").onclick=()=>openForm(null);
+const mk=t=>{const d=new Date(t);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")};
+let monthSel=mk(Date.now());
+function renderMonth(){
+  $("m_in").value=monthSel;
+  const rows=items.filter(i=>i.status==="done"&&i.outAt&&mk(i.outAt)===monthSel).sort((a,b)=>a.outAt-b.outAt);
+  const sum=rows.reduce((s,i)=>s+(Number(i.cost)||0),0),miss=rows.filter(i=>!i.cost).length;
+  $("m_sum").innerHTML=`<div><span>출고 차량</span><b>${rows.length}대</b></div><div><span>수리비용 합계</span><b>${won(sum)}</b></div>`;
+  $("m_list").innerHTML=(rows.length?rows.map(i=>`<div class="m-row"><span>${fmt(i.outAt)} · <b>${esc(i.plate)}</b> ${esc(i.model)}${i.ins?" · "+esc(i.ins):""}</span><span>${i.cost?won(i.cost):"미입력"}</span></div>`).join(""):'<div class="empty">해당 월에 출고된 차량이 없습니다.</div>')+(miss&&rows.length?`<div class="sub" style="margin-top:8px">수리비용 미입력 ${miss}대는 합계에 포함되지 않았습니다.</div>`:"");
+}
+$("monBtn").onclick=()=>{monthSel=mk(Date.now());renderMonth();$("mdlg").showModal()};
+$("m_in").onchange=e=>{if(e.target.value){monthSel=e.target.value;renderMonth()}};
+$("m_close").onclick=()=>$("mdlg").close();
+$("cancelBtn").onclick=()=>$("dlg").close();
+$("saveBtn").onclick=()=>{
+  const plate=$("f_plate").value.trim();
+  if(!plate){$("f_plate").focus();return}
+  const d={plate,model:$("f_model").value.trim(),cust:$("f_cust").value.trim(),phone:$("f_phone").value.trim(),
+    mech:$("f_mech").value.trim(),status:$("f_status").value,due:$("f_due").value,est:Number($("f_est").value)||0,cost:Number($("f_cost").value)||0,ins:$("f_ins").value,work:$("f_work").value.trim(),note:$("f_note").value.trim()};
+  if(editing){d.inAt=inTs(editing.inAt);if(d.status==="done"&&!editing.outAt)d.outAt=Date.now();if(d.status!=="done")d.outAt=null;persist(editing.id,d,false)}
+  else{d.inAt=inTs();d.outAt=d.status==="done"?Date.now():null;persist(uid(),d,true)}
+  $("dlg").close();
+};
+$("delBtn").onclick=()=>{
+  if(!delArmed){delArmed=true;$("delBtn").textContent="정말 삭제할까요?";return}
+  if(col)col.doc(editing.id).delete();else{items=items.filter(x=>x.id!==editing.id);render()}
+  $("dlg").close();
+};
+
+render();
+// ===== Firebase 연결 (firebase-config 값은 README 안내대로 본인 프로젝트 값으로 교체) =====
+const firebaseConfig={
+  apiKey:"여기에_apiKey",
+  authDomain:"여기에_authDomain",
+  projectId:"여기에_projectId",
+  storageBucket:"여기에_storageBucket",
+  messagingSenderId:"여기에_messagingSenderId",
+  appId:"여기에_appId"
+};
+(function(){
+  if(typeof firebase==="undefined"||firebaseConfig.apiKey.indexOf("여기에")===0){
+    $("sync").textContent="Firebase 설정 전 (이 화면에서만 임시 저장)";
+    $("notice").innerHTML='<div class="notice">Firebase 설정이 아직 입력되지 않아 다른 직원과 공유되지 않습니다. README의 설정 방법을 확인해 주세요.</div>';return}
+  firebase.initializeApp(firebaseConfig);
+  col=firebase.firestore().collection("vehicles");
+  const t=setTimeout(()=>{$("sync").textContent="서버에 연결하지 못했습니다. 인터넷 연결을 확인해 주세요."},10000);
+  col.onSnapshot(s=>{
+    items=s.docs.map(d=>Object.assign({id:d.id},d.data()));
+    if(!s.metadata.fromCache)clearTimeout(t);
+    $("sync").textContent="실시간 공유 중 · 직원 모두 같은 화면을 봅니다";render();
+  },e=>{clearTimeout(t);$("sync").textContent="데이터를 불러오지 못했습니다 (규칙/설정 확인)"});
+})();
+</script>
+</body>
+</html>

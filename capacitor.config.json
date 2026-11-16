@@ -1,0 +1,6 @@
+{
+  "appId": "com.sjmotors.board",
+  "appName": "SJ모터스",
+  "webDir": "www",
+  "server": { "androidScheme": "https" }
+}
